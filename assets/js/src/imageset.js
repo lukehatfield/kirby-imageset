@@ -98,6 +98,7 @@
 
       var successCallback = function () {
         this.removeEventListener('load', successCallback);
+        console.log("death by callback", img);
         success();
       };
 
@@ -111,6 +112,7 @@
         testImg.src = img.src;
       }
     } else {
+      console.log("instant success", img);
       success();
     }
   }

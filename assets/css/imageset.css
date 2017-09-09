@@ -12,16 +12,23 @@
      black border appears for no abvious reason at the
      left side of an imageset. */
   overflow: hidden;
-  /* Improve rendering speed in supported browsers. */
+  /* Improve rendering speed in supported browsers. As of
+     September 2017, this is currently only supported by
+     Google Chrome. */
   contain: content;
+  /* As the visibility inherits, it’s set explicitly to
+     “visible” to avoid it from being changed from a any
+     parent element. */
+  visibility: visible;
 }
 
 /* ·····  ImageSet with Ratio-Placeholder  ·································· */
 .imageset.-ratio {
-  display: block;
-  /* Remove bottom margin (borrowed from Inuit CSS) */
+  display: inline-block;
   width: 100%;
   position: relative;
+  /* Remove bottom margin (borrowed from Inuit CSS) */
+  vertical-align: bottom;
   /* Create a new stacking context for this imageset.
      See comments below to learn about why this
      is important. */
@@ -55,48 +62,35 @@
 }
 
 .js .imageset.-ratio.-lazyload .imageset-element {
-  /* The actual image is kept behind the placeholder.
-     Rather than fading in the image, the placeholder is
-     faded out instead. This prevents the image layer to
-     switch from hardware-accelerated rendering during the
-     animation to CPU rendering after the animation has
-     ended, because this can cause rendering issues in
-     WebKit- and Blink-based (and possibly any other)
-     browsers. */
-  z-index: 1;
+  /* Keep element hidden until the actual image has been
+     loaded. */
+  visibility: hidden;
+  opacity: 0;
   -webkit-backface-visibility: hidden;
           backface-visibility: hidden;
+  /* Prepare the browser that imageset will change some
+     properties on the image element */
+  will-change: opacity, visibility;
 }
 
 @media screen {
   .js .imageset.-ratio.-lazyload .imageset-element {
-    transition: opacity 0.5s;
-  }
-}
-
-.js .imageset.-alpha.-lazyload .imageset-element {
-  /* Images with transparency require a different fading
-     technique, as the placeholder would shine through,
-     after the final image was loaded. */
-  opacity: 0;
-  will-change: opacity;
-}
-
-@media screen {
-  .js .imageset.-alpha.-lazyload .imageset-element {
-    transition: opacity 0.5s;
+    transition: visibility 0s 0s linear, opacity 0.5s 0s;
   }
 }
 
 .js .imageset.-lazyload.is-loaded .imageset-element {
   opacity: 1;
+  visibility: visible;
+  /* We’re not gonna change anything further after the
+    final image has been loaded. */
   will-change: auto;
 }
 
+/* ·····  Placeholders  ····················································· */
 .imageset-placeholder {
   display: block;
   position: absolute;
-  z-index: 1;
   top: 50%;
   left: 50%;
   width: 100%;
@@ -109,19 +103,10 @@
   overflow: hidden;
   -webkit-backface-visibility: hidden;
           backface-visibility: hidden;
+  visibility: visible;
 }
 
 .js .imageset.-lazyload .imageset-placeholder {
-  /* Placeholder will be placed on top of the actual
-     image element. This will only be applied, when
-     JavaScript is enabled. */
-  /* Visibility of placeholder is changed to hidden after
-     the transition. */
-  /* The actual placeholder is in front of the actual
-     image, so we don’t have to fade in the image, which
-     would lead to artifacts in WebKit- and Blink-based
-     browsers. */
-  z-index: 2;
   /* Prevent user interaction like accidently saving the
      placeholder via tap/right-click */
   pointer-events: none;
@@ -130,16 +115,6 @@
      the GPU during animation
      Tested in: Chrome 49, Safari 9.1 */
   background-color: #efefef;
-}
-
-@media screen {
-  .js .imageset.-lazyload .imageset-placeholder {
-    transition: opacity 0.5s 0.05s, visibility 0s 0.8s;
-  }
-}
-
-.js .imageset.-alpha .imageset-placeholder {
-  visibility: visible;
 }
 
 @media screen {
@@ -174,8 +149,6 @@
      and then change visibility to allow mouse interation
      with the loaded image in browsers, where the
      `pointer-events` property is not supported. */
-  opacity: 0;
-  visibility: hidden;
 }
 
 /* ·····  NoScript Fallback  ················································ */
