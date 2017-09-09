@@ -348,7 +348,7 @@
             
             canvas       = document.createElement("canvas"),
             ctx          = canvas.getContext("2d"),
-            alpha        = hasClass(el, __wrapperAlphaClass);
+            alpha        = hasClass(wrapper, __wrapperAlphaClass);
 
         canvas.width  = scaledWidth;
         canvas.height = scaledHeight;
