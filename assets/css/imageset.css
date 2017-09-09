@@ -118,9 +118,30 @@
 }
 
 @media screen {
-  .js .imageset.-alpha .imageset-placeholder {
-    transition: opacity 0.5s 0.05s, visibility 0s 0.8s;
+  .js .imageset .imageset-placeholder {
+    transition: visibility 0s linear 0.8s;
+    will-change: visibility;
   }
+}
+
+@media screen {
+  .js .imageset.-alpha .imageset-placeholder {
+    transition: opacity 0.5s 0.05s, visibility 0s linear 0.8s;
+    will-change: opacity, visibility;
+  }
+}
+
+.js .imageset.is-loaded:not(.has-error) .imageset-placeholder {
+  /* After image is loaded, the placeholder will fade out
+     and then change visibility to allow mouse interation
+     with the loaded image in browsers, where the
+     `pointer-events` property is not supported. */
+  visibility: hidden;
+}
+
+.js .imageset.-alpha.is-loaded:not(.has-error) .imageset-placeholder {
+  opacity: 0;
+  visibility: hidden;
 }
 
 .js .imageset.-alpha:not(.-placeholder\:color) .imageset-placeholder {
@@ -142,13 +163,6 @@
   /* Safari 10+ */
   image-rendering: pixelated;
   /* Opera 26+, Chrome */
-}
-
-.js .imageset.is-loaded:not(.has-error) .imageset-placeholder {
-  /* After image is loaded, the placeholder will fade out
-     and then change visibility to allow mouse interation
-     with the loaded image in browsers, where the
-     `pointer-events` property is not supported. */
 }
 
 /* ·····  NoScript Fallback  ················································ */

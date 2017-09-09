@@ -653,7 +653,6 @@
         if(style && placeholderRenderer[style]) {
           // Render placeholder, if a renderer for given
           // imageset exists.
-
           renderer = placeholderRenderer[style](wrapper);
 
           if(settings.placeholderRendering === 'async') {
@@ -757,6 +756,5 @@
 
 })(window, document, Math, Date);
 
-//=require includes/ls.static-gecko-picture.js
 //=require includes/ls.print.js
 //=require includes/lazysizes.js

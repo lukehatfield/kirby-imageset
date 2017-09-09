@@ -1,5 +1,10 @@
 # ImageSet Changelog
 
+- `1.1.0-beta2`
+  - [Cleanup] Removed a fix for the static `<picture>` implementation of Firefox 40-
+  - [Fix] Fix typo in blurred placeholder.
+  - [Encancement] Better fade-in transitons for images, providing better compatibility and simpler CSS code.
+
 - `1.1.0-beta1` (2017/09/08)
   - [Fix] Fix mosaic placeholder rendering rendered too small.
   - [Fix] Remove double-loading settings from config

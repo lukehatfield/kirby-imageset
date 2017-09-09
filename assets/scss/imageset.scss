@@ -164,14 +164,35 @@ $imageset-unveil-delay: .05s !default;
   background-color: #efefef;
 }
 
-.js .imageset.-alpha .imageset-placeholder {
-
-    @media screen {
-      transition:
-        opacity $imageset-unveil-duration $imageset-unveil-delay,
-        visibility 0s ($imageset-unveil-duration + $imageset-unveil-delay + .25s);
-    }
+.js .imageset .imageset-placeholder {
+  @media screen {
+    transition:
+      visibility 0s linear ($imageset-unveil-duration + $imageset-unveil-delay + .25s);
+    will-change: visibility;
   }
+}
+
+.js .imageset.-alpha .imageset-placeholder {
+  @media screen {
+    transition:
+      opacity $imageset-unveil-duration $imageset-unveil-delay,
+      visibility 0s linear ($imageset-unveil-duration + $imageset-unveil-delay + .25s);
+    will-change: opacity, visibility;
+  }
+}
+
+.js .imageset.is-loaded:not(.has-error) .imageset-placeholder {
+  /* After image is loaded, the placeholder will fade out
+     and then change visibility to allow mouse interation
+     with the loaded image in browsers, where the
+     `pointer-events` property is not supported. */
+  visibility: hidden;
+}
+
+.js .imageset.-alpha.is-loaded:not(.has-error) .imageset-placeholder {
+  opacity: 0;
+  visibility: hidden;
+}
 
 .js .imageset.-alpha:not(.-placeholder\:color) .imageset-placeholder {
   background-color: transparent;
@@ -186,15 +207,6 @@ $imageset-unveil-delay: .05s !default;
   image-rendering: -webkit-optimize-contrast; /* Webkit (non-standard naming) */
   image-rendering: crisp-edges;               /* Safari 10+ */
   image-rendering: pixelated;                 /* Opera 26+, Chrome */
-}
-
-.js .imageset.is-loaded:not(.has-error) .imageset-placeholder {
-  /* After image is loaded, the placeholder will fade out
-     and then change visibility to allow mouse interation
-     with the loaded image in browsers, where the
-     `pointer-events` property is not supported. */
-  // opacity: 0;
-  // visibility: hidden;
 }
 
 /* ·····  NoScript Fallback  ················································ */
