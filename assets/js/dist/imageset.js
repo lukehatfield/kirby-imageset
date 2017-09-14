@@ -678,12 +678,30 @@
 
   function debounce(fn, delay) {
     var timer = null;
-    return function () {
+    return function() {
       var context = this, args = arguments;
+      console.log('debounced!');
       clearTimeout(timer);
       timer = setTimeout(function () {
         fn.apply(context, args);
       }, delay);
+    };
+  }
+
+  function throttle(func, limit) {
+    var inThrottle;
+    
+    return function() {
+      var args = arguments,
+        context = this;
+      if (!inThrottle) {
+        func.apply(context, args);
+        inThrottle = true;
+        return setTimeout(function() {
+          inThrottle = false;
+          return inThrottle;
+        }, limit);
+      }
     };
   }
 
@@ -804,6 +822,7 @@
   var isOperaMini = (Object.prototype.toString.call(window.operamini) === "[object OperaMini]");
 
   if(isOperaMini) {
+    console.log("opera mini!");
     // Opera Mini has limited DOM Event support and does not
     // work with lazysizes. So we shortcut the loading process
     // of lazy-loading and disable lazysizes.
@@ -1261,13 +1280,15 @@
 
     }
 
-    var debouncedCheckImagesets = debounce(checkImagesets);
+    var throttledCheckImagesets = throttle(checkImagesets);
 
     // ---  initialization
 
     // ···  transition
 
     document.addEventListener('lazybeforeunveil', function (e) {
+
+      console.log("unveil", e.target, performance.now());
 
       var element = e.target,
           wrapper = element.parentNode;
@@ -1323,20 +1344,23 @@
       if(!!window.MutationObserver) {
         // Use MutationObserver to check for new elements,
         // if supported.
-        new window.MutationObserver( debouncedCheckImagesets ).observe( docElement, {childList: true, subtree: true, attributes: false, characterData: false } );
+        new window.MutationObserver( throttledCheckImagesets ).observe( docElement, {childList: true, subtree: true, attributes: false, characterData: false } );
       } else {
         // Otherwise, fallback to Mutation Events and add
         // a setInterval for as a safety fallback.
-        docElement.addEventListener('DOMNodeInserted', debouncedCheckImagesets, true);
-        docElement.addEventListener('DOMAttrModified', debouncedCheckImagesets, true);
-        setInterval(debouncedCheckImagesets, 999);
+        docElement.addEventListener('DOMNodeInserted', throttledCheckImagesets, true);
+        docElement.addEventListener('DOMAttrModified', throttledCheckImagesets, true);
+        setInterval(throttledCheckImagesets, 999);
       }
 
-      window.addEventListener('hashchange', debouncedCheckImagesets, true);
+      window.addEventListener('hashchange', throttledCheckImagesets, true);
       
-      debouncedCheckImagesets();
+      console.log("chech imagesets", performance.now());
+      checkImagesets();
+      // console.log("en");
     } else {
       // If autoUpdate is disabled, check imagesets just once.
+      console.log("dis");
       ready(checkImagesets);
     }
 
@@ -1353,16 +1377,34 @@
 })(window, document, Math, Date);
 
 /*
+
+4.0.0-rc3
+
 This lazySizes extension adds better support for print.
 In case the user starts to print lazysizes will load all images.
 */
-(function(window){
+(function(window, factory) {
+	var globalInstall = function(){
+		factory(window.lazySizes);
+		window.removeEventListener('lazyunveilread', globalInstall, true);
+	};
+
+	factory = factory.bind(null, window, window.document);
+
+	if(typeof module == 'object' && module.exports){
+		factory(require('lazysizes'));
+	} else if(window.lazySizes) {
+		globalInstall();
+	} else {
+		window.addEventListener('lazyunveilread', globalInstall, true);
+	}
+}(window, function(window, document, lazySizes) {
 	/*jshint eqnull:true */
 	'use strict';
 	var config, elements, onprint, printMedia;
 	// see also: http://tjvantoll.com/2012/06/15/detecting-print-requests-with-javascript/
 	if(window.addEventListener){
-		config = (window.lazySizes && lazySizes.cfg) || window.lazySizesConfig || {};
+		config = (lazySizes && lazySizes.cfg) || window.lazySizesConfig || {};
 		elements = config.lazyClass || 'lazyload';
 		onprint = function(){
 			var i, len;
@@ -1370,7 +1412,7 @@ In case the user starts to print lazysizes will load all images.
 				elements = document.getElementsByClassName(elements);
 			}
 
-			if(window.lazySizes){
+			if(lazySizes){
 				for(i = 0, len = elements.length; i < len; i++){
 					lazySizes.loader.unveil(elements[i]);
 				}
@@ -1387,8 +1429,8 @@ In case the user starts to print lazysizes will load all images.
 			});
 		}
 	}
-})(window);
-
+}));
+// 4.0.0-rc3
 (function(window, factory) {
 	var lazySizes = factory(window, window.document);
 	window.lazySizes = lazySizes;
@@ -1400,7 +1442,7 @@ In case the user starts to print lazysizes will load all images.
 	/*jshint eqnull:true */
 	if(!document.getElementsByClassName){return;}
 
-	var lazySizesConfig;
+	var lazysizes, lazySizesConfig;
 
 	var docElem = document.documentElement;
 
@@ -1461,7 +1503,13 @@ In case the user starts to print lazysizes will load all images.
 	var triggerEvent = function(elem, name, detail, noBubbles, noCancelable){
 		var event = document.createEvent('CustomEvent');
 
-		event.initCustomEvent(name, !noBubbles, !noCancelable, detail || {});
+		if(!detail){
+			detail = {};
+		}
+
+		detail.instance = lazysizes;
+
+		event.initCustomEvent(name, !noBubbles, !noCancelable, detail);
 
 		elem.dispatchEvent(event);
 		return event;
@@ -1493,24 +1541,30 @@ In case the user starts to print lazysizes will load all images.
 
 	var rAF = (function(){
 		var running, waiting;
-		var fns = [];
+		var firstFns = [];
+		var secondFns = [];
+		var fns = firstFns;
 
 		var run = function(){
-			var fn;
+			var runFns = fns;
+
+			fns = firstFns.length ? secondFns : firstFns;
+
 			running = true;
 			waiting = false;
-			while(fns.length){
-				fn = fns.shift();
-				fn[0].apply(fn[1], fn[2]);
+
+			while(runFns.length){
+				runFns.shift()();
 			}
+
 			running = false;
 		};
 
-		var rafBatch = function(fn){
-			if(running){
+		var rafBatch = function(fn, queue){
+			if(running && !queue){
 				fn.apply(this, arguments);
 			} else {
-				fns.push([fn, this, arguments]);
+				fns.push(fn);
 
 				if(!waiting){
 					waiting = true;
@@ -1617,7 +1671,7 @@ In case the user starts to print lazysizes will load all images.
 
 
 	var loader = (function(){
-		var lazyloadElems, preloadElems, isCompleted, resetPreloadingTimer, loadMode, started;
+		var preloadElems, isCompleted, resetPreloadingTimer, loadMode, started;
 
 		var eLvW, elvH, eLtop, eLleft, eLright, eLbottom;
 
@@ -1674,6 +1728,8 @@ In case the user starts to print lazysizes will load all images.
 		var checkElements = function() {
 			var eLlen, i, rect, autoLoadElem, loadedSomething, elemExpand, elemNegativeExpand, elemExpandVal, beforeExpandVal;
 
+			var lazyloadElems = lazysizes.elements;
+
 			if((loadMode = lazySizesConfig.loadMode) && isLoading < 8 && (eLlen = lazyloadElems.length)){
 
 				i = 0;
@@ -1722,6 +1778,7 @@ In case the user starts to print lazysizes will load all images.
 						(eLright = rect.right) >= elemNegativeExpand * hFac &&
 						(eLleft = rect.left) <= eLvW &&
 						(eLbottom || eLright || eLleft || eLtop) &&
+						(lazySizesConfig.loadHidden || getCSS(lazyloadElems[i], 'visibility') != 'hidden') &&
 						((isCompleted && isLoading < 3 && !elemExpandVal && (loadMode < 3 || lowRuns < 4)) || isNestedVisible(lazyloadElems[i], elemExpand))){
 						unveilElement(lazyloadElems[i]);
 						loadedSomething = true;
@@ -1746,6 +1803,7 @@ In case the user starts to print lazysizes will load all images.
 			addClass(e.target, lazySizesConfig.loadedClass);
 			removeClass(e.target, lazySizesConfig.loadingClass);
 			addRemoveLoadEvents(e.target, rafSwitchLoadingClass);
+			triggerEvent(e.target, 'lazyloaded');
 		};
 		var rafedSwitchLoadingClass = rAFIt(switchLoadingClass);
 		var rafSwitchLoadingClass = function(e){
@@ -1761,7 +1819,7 @@ In case the user starts to print lazysizes will load all images.
 		};
 
 		var handleSources = function(source){
-			var customMedia, parent;
+			var customMedia;
 
 			var sourceSrcset = source[_getAttribute](lazySizesConfig.srcsetAttr);
 
@@ -1771,13 +1829,6 @@ In case the user starts to print lazysizes will load all images.
 
 			if(sourceSrcset){
 				source.setAttribute('srcset', sourceSrcset);
-			}
-
-			//https://bugzilla.mozilla.org/show_bug.cgi?id=1170572
-			if(customMedia){
-				parent = source.parentNode;
-				parent.insertBefore(source.cloneNode(), source);
-				parent.removeChild(source);
 			}
 		};
 
@@ -1829,18 +1880,18 @@ In case the user starts to print lazysizes will load all images.
 					}
 				}
 
-				if(srcset || isPicture){
+				if(isImg && (srcset || isPicture)){
 					updatePolyfill(elem, {src: src});
 				}
 			}
 
-			rAF(function(){
-				if(elem._lazyRace){
-					delete elem._lazyRace;
-				}
-				removeClass(elem, lazySizesConfig.lazyClass);
+			if(elem._lazyRace){
+				delete elem._lazyRace;
+			}
+			removeClass(elem, lazySizesConfig.lazyClass);
 
-				if( !firesLoad || elem.complete ){
+			rAF(function(){
+				if( !firesLoad || (elem.complete && elem.naturalWidth > 1)){
 					if(firesLoad){
 						resetPreloading(event);
 					} else {
@@ -1848,7 +1899,7 @@ In case the user starts to print lazysizes will load all images.
 					}
 					switchLoadingClass(event);
 				}
-			});
+			}, true);
 		});
 
 		var unveilElement = function (elem){
@@ -1860,7 +1911,7 @@ In case the user starts to print lazysizes will load all images.
 			var sizes = isImg && (elem[_getAttribute](lazySizesConfig.sizesAttr) || elem[_getAttribute]('sizes'));
 			var isAuto = sizes == 'auto';
 
-			if( (isAuto || !isCompleted) && isImg && (elem.src || elem.srcset) && !elem.complete && !hasClass(elem, lazySizesConfig.errorClass)){return;}
+			if( (isAuto || !isCompleted) && isImg && (elem[_getAttribute]('src') || elem.srcset) && !elem.complete && !hasClass(elem, lazySizesConfig.errorClass)){return;}
 
 			detail = triggerEvent(elem, 'lazyunveilread').detail;
 
@@ -1903,7 +1954,7 @@ In case the user starts to print lazysizes will load all images.
 			_: function(){
 				started = Date.now();
 
-				lazyloadElems = document.getElementsByClassName(lazySizesConfig.lazyClass);
+				lazysizes.elements = document.getElementsByClassName(lazySizesConfig.lazyClass);
 				preloadElems = document.getElementsByClassName(lazySizesConfig.lazyClass + ' ' + lazySizesConfig.preloadClass);
 				hFac = lazySizesConfig.hFac;
 
@@ -1934,8 +1985,9 @@ In case the user starts to print lazysizes will load all images.
 					setTimeout(onload, 20000);
 				}
 
-				if(lazyloadElems.length){
+				if(lazysizes.elements.length){
 					checkElements();
+					rAF._lsFlush();
 				} else {
 					throttledCheckElements();
 				}
@@ -2037,7 +2089,8 @@ In case the user starts to print lazysizes will load all images.
 			init: true,
 			expFactor: 1.5,
 			hFac: 0.8,
-			loadMode: 2
+			loadMode: 2,
+			loadHidden: true,
 		};
 
 		lazySizesConfig = window.lazySizesConfig || window.lazysizesConfig || {};
@@ -2057,7 +2110,7 @@ In case the user starts to print lazysizes will load all images.
 		});
 	})();
 
-	return {
+	lazysizes = {
 		cfg: lazySizesConfig,
 		autoSizer: autoSizer,
 		loader: loader,
@@ -2070,6 +2123,7 @@ In case the user starts to print lazysizes will load all images.
 		gW: getWidth,
 		rAF: rAF,
 	};
+
+	return lazysizes;
 }
 ));
-

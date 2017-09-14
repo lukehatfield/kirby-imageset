@@ -82,12 +82,30 @@
 
   function debounce(fn, delay) {
     var timer = null;
-    return function () {
+    return function() {
       var context = this, args = arguments;
+      console.log('debounced!');
       clearTimeout(timer);
       timer = setTimeout(function () {
         fn.apply(context, args);
       }, delay);
+    };
+  }
+
+  function throttle(func, limit) {
+    var inThrottle;
+    
+    return function() {
+      var args = arguments,
+        context = this;
+      if (!inThrottle) {
+        func.apply(context, args);
+        inThrottle = true;
+        return setTimeout(function() {
+          inThrottle = false;
+          return inThrottle;
+        }, limit);
+      }
     };
   }
 
@@ -208,6 +226,7 @@
   var isOperaMini = (Object.prototype.toString.call(window.operamini) === "[object OperaMini]");
 
   if(isOperaMini) {
+    console.log("opera mini!");
     // Opera Mini has limited DOM Event support and does not
     // work with lazysizes. So we shortcut the loading process
     // of lazy-loading and disable lazysizes.
@@ -665,13 +684,15 @@
 
     }
 
-    var debouncedCheckImagesets = debounce(checkImagesets);
+    var throttledCheckImagesets = throttle(checkImagesets);
 
     // ---  initialization
 
     // ···  transition
 
     document.addEventListener('lazybeforeunveil', function (e) {
+
+      console.log("unveil", e.target, performance.now());
 
       var element = e.target,
           wrapper = element.parentNode;
@@ -727,20 +748,23 @@
       if(!!window.MutationObserver) {
         // Use MutationObserver to check for new elements,
         // if supported.
-        new window.MutationObserver( debouncedCheckImagesets ).observe( docElement, {childList: true, subtree: true, attributes: false, characterData: false } );
+        new window.MutationObserver( throttledCheckImagesets ).observe( docElement, {childList: true, subtree: true, attributes: false, characterData: false } );
       } else {
         // Otherwise, fallback to Mutation Events and add
         // a setInterval for as a safety fallback.
-        docElement.addEventListener('DOMNodeInserted', debouncedCheckImagesets, true);
-        docElement.addEventListener('DOMAttrModified', debouncedCheckImagesets, true);
-        setInterval(debouncedCheckImagesets, 999);
+        docElement.addEventListener('DOMNodeInserted', throttledCheckImagesets, true);
+        docElement.addEventListener('DOMAttrModified', throttledCheckImagesets, true);
+        setInterval(throttledCheckImagesets, 999);
       }
 
-      window.addEventListener('hashchange', debouncedCheckImagesets, true);
+      window.addEventListener('hashchange', throttledCheckImagesets, true);
       
-      debouncedCheckImagesets();
+      console.log("chech imagesets", performance.now());
+      checkImagesets();
+      // console.log("en");
     } else {
       // If autoUpdate is disabled, check imagesets just once.
+      console.log("dis");
       ready(checkImagesets);
     }
 
