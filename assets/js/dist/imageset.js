@@ -680,7 +680,6 @@
     var timer = null;
     return function() {
       var context = this, args = arguments;
-      console.log('debounced!');
       clearTimeout(timer);
       timer = setTimeout(function () {
         fn.apply(context, args);
@@ -712,7 +711,6 @@
 
       var successCallback = function () {
         this.removeEventListener('load', successCallback);
-        console.log("death by callback", img);
         success();
       };
 
@@ -726,7 +724,6 @@
         testImg.src = img.src;
       }
     } else {
-      console.log("instant success", img);
       success();
     }
   }
@@ -822,7 +819,6 @@
   var isOperaMini = (Object.prototype.toString.call(window.operamini) === "[object OperaMini]");
 
   if(isOperaMini) {
-    console.log("opera mini!");
     // Opera Mini has limited DOM Event support and does not
     // work with lazysizes. So we shortcut the loading process
     // of lazy-loading and disable lazysizes.
@@ -1222,7 +1218,6 @@
         triangleMosaicFilter(canvas, 40, alpha);
         source.parentNode.replaceChild(canvas, source);
         addClass(wrapper, __wrapperPlaceholderRenderedClass);
-        console.log('placeholder rendered');
       };
 
       return function() {
@@ -1287,8 +1282,6 @@
     // ···  transition
 
     document.addEventListener('lazybeforeunveil', function (e) {
-
-      console.log("unveil", e.target, performance.now());
 
       var element = e.target,
           wrapper = element.parentNode;
@@ -1355,12 +1348,9 @@
 
       window.addEventListener('hashchange', throttledCheckImagesets, true);
       
-      console.log("chech imagesets", performance.now());
       checkImagesets();
-      // console.log("en");
     } else {
       // If autoUpdate is disabled, check imagesets just once.
-      console.log("dis");
       ready(checkImagesets);
     }
 
