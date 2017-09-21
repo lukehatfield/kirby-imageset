@@ -149,7 +149,7 @@ $imageset-unveil-delay: .05s !default;
   transform: translate(-50%, -50%);
   overflow: hidden;
   backface-visibility: hidden;
-  visibility: visible;
+  // visibility: visible;
 }
 
 .js .imageset.-lazyload .imageset-placeholder {
@@ -164,13 +164,13 @@ $imageset-unveil-delay: .05s !default;
   background-color: #efefef;
 }
 
-.js .imageset .imageset-placeholder {
-  @media screen {
-    transition:
-      visibility 0s linear ($imageset-unveil-duration + $imageset-unveil-delay + .25s);
-    will-change: visibility;
-  }
-}
+// .js .imageset .imageset-placeholder {
+//   @media screen {
+//     transition:
+//       visibility 0s linear ($imageset-unveil-duration + $imageset-unveil-delay + .25s);
+//     will-change: visibility;
+//   }
+// }
 
 .js .imageset.-alpha .imageset-placeholder {
   @media screen {
@@ -181,18 +181,18 @@ $imageset-unveil-delay: .05s !default;
   }
 }
 
-.js .imageset.is-loaded:not(.has-error) .imageset-placeholder {
-  /* After image is loaded, the placeholder will fade out
-     and then change visibility to allow mouse interation
-     with the loaded image in browsers, where the
-     `pointer-events` property is not supported. */
-  visibility: hidden;
-}
+// .js .imageset.is-loaded:not(.has-error) .imageset-placeholder {
+//   After image is loaded, the placeholder will fade out
+//      and then change visibility to allow mouse interation
+//      with the loaded image in browsers, where the
+//      `pointer-events` property is not supported.
+//   visibility: hidden;
+// }
 
-.js .imageset.-alpha.is-loaded:not(.has-error) .imageset-placeholder {
-  opacity: 0;
-  visibility: hidden;
-}
+// .js .imageset.-alpha.is-loaded:not(.has-error) .imageset-placeholder {
+//   opacity: 0;
+//   visibility: hidden;
+// }
 
 .js .imageset.-alpha:not(.-placeholder\:color) .imageset-placeholder {
   background-color: transparent;
