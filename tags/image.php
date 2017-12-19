@@ -50,7 +50,7 @@ kirbytext::$tags['image'] = [
     // alt is just an alternative for text
     if($text = $tag->attr('text')) $alt = $text;
 
-    // try to get the title from the image object and use it as alt text
+    // try to get the title, alt, or caption from the image object and use them instead
     if($file) {
 
       if(empty($alt) && $file->alt() != '') {
@@ -59,6 +59,10 @@ kirbytext::$tags['image'] = [
 
       if(empty($title) and $file->title() != '') {
         $title = $file->title();
+      }
+      
+      if(empty($caption) and $file->caption() != '') {
+        $caption = $file->caption();
       }
 
     }
